@@ -11,12 +11,21 @@
 
 
 # Description
+Solve Rubik’s Cubes under official Rubik’s Cubes
+competition conditions, and the Fewest Moves Challenge (FMC) in particular, minus the
+usual hour limit .
 
 ### Project Specifications
+- No segfault, memory leak, double free, infinite loop.
+- You can use any library as long as you can justify them during the evaluation.
+- You must be able to explain your algorithm with simple words and visual concepts.
 
-
-
-
+- Your program must accept a mix in parameter.
+- The notation used is the one used globally (F R U B L D)
+- Spins of slices M, E and S as well as rotations of x, y and z are
+prohibited.
+- Your program must return the spin sequences on a 3x3x3 cube mixed with the given
+sequence beforehand on the standard output.
 
 # Instructions
 
