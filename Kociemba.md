@@ -140,9 +140,10 @@ For this Algorithm, a Corner is oriented when the U/D facing stickers are either
 That doesn't make much sense. Just accept they exist and that 0 is the goal. \
 Each possible move has a table describing how corner c and orientation o change with it. Here is an example for F:
 
-F = \
-Position    | URF       | UFL       | ULB       | UBR       | DFR       | DLF       | DBL       | DRB \
-replaced by | c:UFL;o:1 | c:DLF;o:2 | c:ULB;o:0 | c:UBR;o:0 | c:URF;o:2 | c:DFR;o:1 | c:DBL;o:0 | c:DRB,o:0
+F = 
+
+    Position    | URF       | UFL       | ULB       | UBR       | DFR       | DLF       | DBL       | DRB 
+    replaced by | c:UFL;o:1 | c:DLF;o:2 | c:ULB;o:0 | c:UBR;o:0 | c:URF;o:2 | c:DFR;o:1 | c:DBL;o:0 | c:DRB,o:0
 
 - Note that corners moving between U and D are +2 and the rest that's affected +1.
 
