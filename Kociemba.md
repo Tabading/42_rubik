@@ -1,30 +1,106 @@
 
 # Table of Contents
-- [Description](#description)
-    - 
+- [Kociemba Two-Phase-Algorithm](#kociemba-two-phase-algorithm)
+- [Phase 1](#phase-1)
+    - [(x, y, z) Coordinates Phase 1](#x-y-z-coordinates-phase-1)
+        - [x Corner Orientation Coordinate](#x-corner-orientation-coordinate)
+        - [y Edge Orientation Coordinate](#y-edge-orientation-coordinate)
+        - [z UDSlice Coordinate](#z-udslice-coordinate)
+- [Notes](#notes)
+    - [EO Edge Orientation](#eo-edge-orientation)
+        - [Natural / Unnatural Moves](#natural-/-unnatural-moves)
+        - [Orbits](#orbits)
+    - [Corner Orientation](#corner-orientation)
+    - [Resources](#resources)
 
 # Kociemba Two-Phase-Algorithm
-Kociemba's two-phase algorithm quickly finds a reasonably short suboptimal solution. A randomly scrambled cube would be typically solved in a ***fraction of a second in 20 moves or less***, but without any guarantee that the solution found is optimal. it is split in 2 Phases: \
+Kociemba's two-phase algorithm quickly finds a reasonably short suboptimal solution. A randomly scrambled cube would be typically solved in a ***fraction of a second in 20 moves or less***, but without any guarantee that the solution found is optimal. it is split in 2 Phases: 
 - Phase 1: Orient all Edges and Corners correctly, so the cube can be solved using only 180° rotations of the sides (R2, L2, F2, B2) and U/D 
 - Phase 2: solve the cube
 
-## Description
+# Phase 1
+Look for maneuvers which transform a scrambled cube to a G1 state. G1 Describes a subset of cube states that have Corners and Edges Oriented correctly. To do that efficently the cube state is described with 3 coordinates: (x, y, z). x is the Corner orientation Coordinate, y is the Edge orientation Coordinate, z is the UDSlice Coordinate. All G1 cube states have (0, 0, 0) as their coordinates.
 
-## Phase 1
-Look for maneuvers which transform a scrambled cube to a G1 state. G1 Describes a subset of cube states that have Corners and Edges Oriented correctly. To do that efficently the cube state is described with 3 coordinates: (x, y, z). All G1 cube states have (0, 0, 0) as their coordinates.
+
+
+## (x, y, z) Coordinates Phase 1
+In Phase 1 x, y and z are as follows:
+
+### x Corner Orientation Coordinate
+The orientation of the 8 corners are described by a number from 0 to 2186 (3^7 - 1). Going by Corner Order URF, UFL, ULB, UBR, DFR, DLF, DBL, (DRB), do the following:
+
+    s = 0
+    s = 6
+    for Corner:
+        s += Corner.o * 3^n
+        n--
+    
+    essentialy URF.o*3^6 + UFL.o*3^5 etc.
+    DRB is ignored in the calculation.
+
+    ! This ONLY works with the 'is replaced by' representation.
+
+### y Edge Orientation Coordinate
+The orientation of the 12 edges is described by a number from 0 to 2047 (2^11 - 1). Going by Edge Order of UR, UF, UL, UB, DR, DF, DL, DB, FR, FL, BL, (BR), the orientation numbers of 0 and 1 make up a binary number, which turned into decimal is our coordinate. This can be easily done like this:
+
+    s = 0
+    for edge:
+        s = 2 * s + edge.o
+
+    BR is ignored.
+
+### z UDSlice Coordinate
+The UDSlice coordinate is number from 0 to 494 (12*11*10*9/4! - 1) which is determined by the positions of the 4 UDSlice edges. The order of the 4 UDSlice edges within the positions is ignored.
+
+Take all 12 Edges, number them from 0 - 11, and check where the 4 UD Edges are. \
+Imagine it like this with x being a UDSlice:
+
+    Position n  |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 
+    Edge        | UR | UF | UL | UB | DR | DF | DL | DB | FR | FL | BL | BR | 
+    UDSlice     |    |    |    |    |    |    |    |    |  x |  x |  x |  x | 
+
+Starting at 0 go through it with k = -1. Each time you encounter an x k++ up to 3 max (0, 1, 2, 3). If there are non x spaces when k >= 0 take it as a binomial coefficient C(n, k). For example:
+
+    Position n  |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 
+    Edge        | UR | UF | UL | UB | DR | DF | DL | DB | FR | FL | BL | BR | 
+    UDSlice     |    |    |    |  x |    |    |  x |    |    |  x |    |  x | 
+
+    0 - 2 k = -1: no C()
+    3 -> k++
+    4 - 5 k = 0: C(4, 0), C(5, 0)
+    6 -> k++
+    7 - 8 k = 1: C(7, 1), C(8, 1)
+    9 -> k++
+    10 k = 2: C(10, 2)
+    11 k++
+
+The Formel to turn this binomial coefficient into a number:
+
+    C(n, k) = (n!) / ((k!) * (n - k)!)
+
+For Example:
+
+    C(4, 0) = (4!) / ((0!) * (4 - 0)!) = 1
+    C(5, 0) = (5!) / ((0!) * (5 - 0)!) = 1
+
+    C(7, 1) = (7!) / ((1!) * (7 - 1)!) = 7
+    C(8, 1) = (8!) / ((1!) * (8 - 1)!) = 8
+
+    C(10, 2) = (10!) / ((2!) * (10 - 2)!) = 45
+
+    z = 45 + 8 + 7 + 1 + 1 = 62
+
+
+
+
 
 
 ## Phase 2
 
 
+
+
 # Notes
-
-## (x, y, z) Coordinates 1
-In Phase 1 x, y and z are as follows:
-
-### x Corner Orientation Coordinate
-The orientation of the 8 corners are described by a number from 0 to 2186 (3^7 - 1).
-
 
 ## EO Edge Orientation 
 If the Edge is oriented in a way that it can be brought into position using only natural moves it's a good edge. To recognize if that's the case you need to know about the 2 'edge orbits'. This only works if what you consider Up and Front stays the same, so don't change perspective. From here there's 2 Rules for finding the Edges easily:
@@ -108,10 +184,23 @@ calculate x = DLF:
     After F L: DLF.c = DLF, DLF.o = 1
     
 
+## Move Tables
+Calculating the result of each move every time isn't very time efficient. Move Tables are simply an array where we save those calculations so they only need to be done once. Each Coordinate has a Move Table where for each possible Coordinate are 18 possible saved move calculations.
+
+Using the Corner orientation as Example:
+
+    array[2186][18]
+
+    for i = 0 <= 2186:
+        // create a cube with orientation i
+        for 6 moves:
+            for 3 variants:
+                // apply move to cube and save result inside array[i][]
+
+If this Table / result is saved outside runtime in a file or something, it can be loaded by the programme.
 
 
-
-
+# Resources
 
 - https://www.youtube.com/watch?v=RPXcIUnKvQ8
 - https://www.zzmethod.com/tutorial/eo
