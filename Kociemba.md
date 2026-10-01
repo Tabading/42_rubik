@@ -21,10 +21,8 @@ Kociemba's two-phase algorithm quickly finds a reasonably short suboptimal solut
 # Phase 1
 Look for maneuvers which transform a scrambled cube to a G1 state. G1 Describes a subset of cube states that have Corners and Edges Oriented correctly. To do that efficently the cube state is described with 3 coordinates: (x, y, z). x is the Corner orientation Coordinate, y is the Edge orientation Coordinate, z is the UDSlice Coordinate. All G1 cube states have (0, 0, 0) as their coordinates.
 
-
-
 ## (x, y, z) Coordinates Phase 1
-In Phase 1 x, y and z are as follows:
+In Phase 1 x, y and z are as described below. All coordinates are needed information, but functionally Edge orientation and UDSlice coordinates are combined and reduced through symmetry reduction.
 
 ### x Corner Orientation Coordinate
 The orientation of the 8 corners are described by a number from 0 to 2186 (3^7 - 1). Going by Corner Order URF, UFL, ULB, UBR, DFR, DLF, DBL, (DRB), do the following:
@@ -92,12 +90,93 @@ For Example:
 
 
 
+# Phase 2
+Transforms the cube from a G1 state into a solved one, using only moves of this subgroup, being G1 = <U,D,R2,L2,F2,B2>. Simmilar to phase 1, any cube can be described using 3 coordinates: The corner permutation coordinate (0..40319), the phase 2 edge permutation coordinate (0..40319), and the phase2 UDSlice coordinate (0..23). 
+
+## (x, y, z) Coordinates Phase 20
+
+### Corner permutation Coordinate
+The corner permutation coordinate is given by a number from 0 to 40319 (8! - 1). \
+Like in Phase 1 the corners have a certain order going:
+- URF, UFL, ULB, UBR, DFR, DLF, DBL, DRB. 
+
+URF has low value, DRB high. Each corner gets a number depending on how many corners LEFT of their position in the order, are higher value. \
+Take this example for the R-move:
+
+    Order       | URF | UFL | ULB | UBR | DFR | DLF | DBL | DRB |
+    Corner c.   | DFR | UFL | ULB | URF | DRB | DLF | DBL | UBR |
+    number      |  0  |  1  |  1  |  3  |  0  |  1  |  1  |  4  |
+
+    c:UBR -> DFR, DLF, DBL, DRB are higher value, all left of current position -> 4
+    c:DBL -> DRB is higher, left of position -> 1
+    c:DLF -> DBL, DRB higher, only DRB left of position -> 1
+    c:DRB -> highest -> 0
+    c:URF -> lowets, has 3 to the left -> 3
+    c:ULB -> UBR, DFR, DLF, DBL, DRB higher, only DFR to the left -> 1
+    c:UFL -> ULB, UBR, DFR, DLF, DBL, DRB higher, only DFR to the left -> 1
+    c:DFR -> leftmost -> 0 (always 0 = ignore)
+
+The permutation coordinate is made from these numbers, like so:
+
+    1*1! + 1*2! + 3*3! + 0*4! + 1*5! + 1*6! + 4*7! = 21021
+    (number*1! + number*2! ...)
+
+
+### Edge permutation Coordinate
+The edge permutation coordinate is described in an analogous way by a number from 0 to 12! - 1. \
+It's created like the corner permutation coordinate, using the order:
+- UR, UF, UL, UB
+- DR, DF, DL, DB
+- FR, FL, BL, BR
+Take this example for the R-move:
+
+    Order       | UR | UF | UL | UB | DR | DF | DL | DB | FR | FL | BL | BR |
+    Edge e.     | FR | UF | UL | UB | BR | DF | DL | DB | DR | FL | BL | UR |
+    number      |  0 |  1 |  1 |  1 |  0 |  2 |  2 |  2 |  5 |  1 |  1 | 11 |
+
+    1*1! + 1*2! + 1*3! + 0*4! + 2*5! + 2*6! + 2*7! + 5*8! + 1*9! + 1*10! + 11*11! = 443289849
 
 
 
-## Phase 2
+### Phase 2 UDSlice Coordinate
+The phase 2 UDSlice coordinate should have a range from 0..23 because it represents the 4! permutations of the UDSlice edges in their slice. But we use an extension of the UDSlice coordinate instead, which is used in the huge optimal solver anyway and where we also regard the order of the four edges.
 
+IE: See the UDSlice coordinate, it can be 0 (G1 state) despite the edges not being orderd correctly. They are numbererd 8 9 10 11. For this go through and find their current order, for example 10 8 9 11 or smth. Then going backwards check how many edges to the left have a higher number.
 
+    array = [10, 8, 9, 11]
+    x = 0
+
+    for (j = 3, 3 >= 1, j--)
+        s = 0
+        for (k = j - 1, k >= 0, k--)
+            if (array[k] > array[j])
+                s++
+        x = (x + s) * j
+
+for example:
+
+    array = [10, 8, 9, 11]
+    
+    11 has no bigger bums to the left
+    x = (0 + 0) * 3
+    x = 0
+
+    9 has 1 bigger
+    x = (0 + 1) * 2
+    x = 2
+
+    8 has 1 bigger
+    x = (2 + 1) * 1
+    x = 3
+
+    so the coordinate would be 3
+
+another example:
+
+    array = [11, 10, 9, 8]
+    x = (0 + 3) * 3 = 9
+    (9 + 2) * 2 = 22
+    (22 + 1) * 1 = 23
 
 
 # Notes
