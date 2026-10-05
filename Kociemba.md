@@ -28,7 +28,7 @@ In Phase 1 x, y and z are as described below. All coordinates are needed informa
 The orientation of the 8 corners are described by a number from 0 to 2186 (3^7 - 1). Going by Corner Order URF, UFL, ULB, UBR, DFR, DLF, DBL, (DRB), do the following:
 
     s = 0
-    s = 6
+    n = 6
     for Corner:
         s += Corner.o * 3^n
         n--
@@ -181,6 +181,20 @@ another example:
 
 # Notes
 
+## Permutations
+Applying a move to a cube state rearanges the facelets/stickers. That rearangement is called a Permutation. \
+Ex: \
+F = 
+
+| Position | URF | UFL | ULB | UBR | DFR | DLF | DBL | DRB |
+|---|---|---|---|---|---|---|---|---|
+| Replaced by | c:UFL; o:1 | c:DLF; o:2 | c:ULB; o:0 | c:UBR; o:0 | c:URF; o:2 | c:DFR; o:1 | c:DBL; o:0 | c:DRB; o:0 |
+
+
+In this case the corner URF is replaced by the corner currently at UFL adding +1 to its orientation, etc.
+
+There's 2 ways of representing changes like this, "is replaced by" & "is carried to". Unless specified otherwise the algorithm uses the "is replaced by" representation.
+
 ## EO Edge Orientation 
 If the Edge is oriented in a way that it can be brought into position using only natural moves it's a good edge. To recognize if that's the case you need to know about the 2 'edge orbits'. This only works if what you consider Up and Front stays the same, so don't change perspective. From here there's 2 Rules for finding the Edges easily:
 - Rule 1: look for L and R stickers on orbit 1. Their edges are bad.
@@ -221,8 +235,9 @@ Each possible move has a table describing how corner c and orientation o change 
 
 F = 
 
-    Position    | URF       | UFL       | ULB       | UBR       | DFR       | DLF       | DBL       | DRB 
-    replaced by | c:UFL;o:1 | c:DLF;o:2 | c:ULB;o:0 | c:UBR;o:0 | c:URF;o:2 | c:DFR;o:1 | c:DBL;o:0 | c:DRB,o:0
+| Position | URF | UFL | ULB | UBR | DFR | DLF | DBL | DRB |
+|---|---|---|---|---|---|---|---|---|
+| Replaced by | c:UFL; o:1 | c:DLF; o:2 | c:ULB; o:0 | c:UBR; o:0 | c:URF; o:2 | c:DFR; o:1 | c:DBL; o:0 | c:DRB; o:0 |
 
 - Note that corners moving between U and D are +2 and the rest that's affected +1.
 
@@ -353,19 +368,70 @@ Two cubes with the permutations A and B are only equivalent if there is an i wit
 Ok, remember all the coordinates this algorythm uses? They're used to create subgroups and cosets. \
 We have a subgroup for all diffrent types of coordinates:
 
-    subgroup of G           | coset coord       | used in 
+| Subgroup of G | Coset coordinate | Used in |
+|---|---:|---|
+| Corner orientation = 0 | 0–2186 | Phase 1 |
+| Edge orientation = 0 | 0–2047 | Phase 1 |
+| UDSlice = 0 | 0–494 | Phase 1 |
+| FlipUDSlice = 0 | 0–494 × 2048 − 1 | Phase 1 (combines the above two) |
+| Corner permutation = 0 | 0–40319 | Phase 2 |
+| (UD face) edge permutation = 0 | 0–40319 (8! − 1) | Phase 2 (only edges not in UDSlice) |
+| UDSliceSort = 0 | 0–11879 | Phase 2 (in Phase 2, only uses 0–23) |
 
-    corner ori = 0          | 0 - 2186          | phase 1
-    edge ori = 0            | 0 - 2047          | phase 1
-    UDSlice = 0             | 0 - 494           | phase 1
-    FlipUDSlice = 0         | 0 - 494*2048 - 1  | phase 1 (combines above two)
-
-    corner perm = 0         | 0..40319          | phase 2
-    (UD face)edge perm = 0  | 0..40319  (8!-1)  | phase 2 (only edges not in UDSlice)
-    UDSliceSort = 0         | 0..11879          | phase 2 (0 to 11879=12*11*10*9-1. in phase 2 int only uses 0..23)
 
 So we get a subgroup H (called diffrent in explanation) with a bunch of cosets for each coordinate type. The H is always for coordinate 0, after that there's a coset for each coordinate. \
 Think of 2 randomly scrambled cubes, those cubes might have the same Corner Orientation coordinate despite having diffrences in the other coordinates. Both of those cubes would belong to the same corner orientation coset; The one corresponding to their coordinate.
+
+### Subgroup example
+Subgroup C0 (Corner orientation coordinate).
+
+    C0 = { g from G with g(x).o = 0 for all corners x}
+    C0 is made up from all g (permutations) inside G (ALL Permutations used for coordinates) where corner orientation is = 0 for all Corners x.
+
+The right cosets are defined by:
+
+    C0*g = {a*g | a from C0}
+
+    C0*g:   coset (there's 1 for all 0..2186 corner orientation coordinates)
+    C0:     subgroup with many permutations where .o = 0 for all corners
+    a:      element from C0, 1 permutation with .o = 0 for all corners
+    g:      element from G, any possible permutation? maybe
+
+The multiplication C0*g is solved like any two permutations:
+
+    (a*g)(x).o = a(g(x).c).o + g(x).o 
+
+But since all orientations .o from a (C0) are 0, this can be simplefied to:
+    
+    = 0 + g(x).o 
+    = g(x).o
+
+So all elements of the coset C0\*g have the same corner orientations (defined by the permutation g) and all elements of C0\*g have the same corner orientation coordinate. And if on the other hand two permutations have the same corner orientation coordinate, they are in the same coset. The formal proof is a bit more lengthy.
+
+
+### Formal proof
+If permutations a & b have the same corner orientation coordinate, a(x).o = b(x).o for all corners x is true.
+
+    cb:=b^-1(x).c 
+    ob:=b^-1(x).o
+
+    cb = inverse b .c
+    ob = inverse b .o
+
+    (corner x is replaced by corner cb and the orientation of cb is increased by ob when put into position x) .
+
+    b(cb).c = x 
+    b(cb).o = -ob
+
+    (b is the inverse of b^-1 (cb), so corner cb is replaced by corner x and the orientation of x is decreased by ob when put in position cb).
+
+a and b are in the same coset of C0 if and only if a*b^-1 is in C0. Now we have for all corners x
+
+    (a*b^-1)(x).o   = a(b^-1(x).c).o + b^-1(x).o 
+                    = a(cb).o + ob                  // corners a & b should be the same
+                    = b(cb).o + ob                  // switched since we have  b(cb).o = -ob, but not  a(cb).o = -ob
+                    = -ob + ob 
+                    = 0 (which was to be demonstrated)
 
 ### Cosets (basics)
 we have a group G with a subgroup H. H is a coset already but doesn't contain all elements of G. That's where cosets come in: we get a right/left factor g (Hg / gH), thats added/multiplied with H.\
@@ -380,17 +446,28 @@ Take this exmple:
 There's also an Index of H in G: [G:H]
 
 
-## Permutations
-Applying a move to a cube state rearanges the facelets/stickers. That rearangement is called a Permutation. \
-Ex: \
-F = 
+## Coordinates and Symmetry
+Cordinates represent cosets, each coset usually consists of many permutations. \
+If you move the whole cube and recolor it or you do a conjugation with a symmetry S(i) as explained in "Equivalent Cubes & Symetry" , the coordinates usually change.
 
-    Position    | URF       | UFL       | ULB       | UBR       | DFR       | DLF       | DBL       | DRB 
-    replaced by | c:UFL;o:1 | c:DLF;o:2 | c:ULB;o:0 | c:UBR;o:0 | c:URF;o:2 | c:DFR;o:1 | c:DBL;o:0 | c:DRB,o:0
+You must be careful if you want to map a coordinate by a symmetry conjugation to another coordinate. If you have two different permutations P and Q in a coset, S(i)-1\*P\*S(i) and S(i)-1\*Q\*S(i) always have to be in the same coset, else you cannot do this mapping nor can you define equivalent cosets.
 
-    In this case the corner URF is replaced by the corner currently at UFL adding +1 to its orientation, etc.
+This restricts the symmetries which are appliable here. It is not difficult to show that exactly those symmetries S(i) are appliable, for which the subgroup H which defines the cosets has the property S(i)-1\*H\*S(i) = H.
 
-There's 2 ways of representing changes like this, "is replaced by" & "is carried to". Unless specified otherwise the algorithm uses the "is replaced by" representation.
+
+| Coordinate | Full symmetry group (48 elements) | Subgroup generated by S_F2, S_U4 and S_LR2 (16 elements) | Used in |
+|---|---|---|---|
+| Corner orientation (twist) | No | Yes | Phase 1, optimal solvers |
+| Edge orientation (flip) | No* | No* | — |
+| UDSlice | No | Yes | — |
+| FlipUDSlice | No | Yes | Phase 1, optimal solver, 64,430 equivalence classes |
+| Corner permutation | Yes** | Yes | Phase 2, 2,768 equivalence classes |
+| Phase 2 edge permutation | No | Yes | Phase 2 |
+| UDSliceSorted coordinate | No | Yes | Huge optimal solver, 788 equivalence classes |
+
+*It is possible to give another definition for the edge-orientations, so that the full symmetry group can be used with the edge orientation coordinate. But we prefer the usual definition which is better suited for the two-phase algorithm.
+**Not used in Cube Explorer
+
 
 # Resources
 
