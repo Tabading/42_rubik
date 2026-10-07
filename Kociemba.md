@@ -486,7 +486,7 @@ TLDR:
         - sym-coordinates can represent multiple coordinates thet were reduced
 
 ## Move Tables
-Calculating the result of each move every time isn't very time efficient. Move Tables are simply an array where we save those calculations so they only need to be done once. Each Coordinate has a Move Table where for each possible Coordinate are 18 possible saved move calculations. \
+Calculating the result of each move every time isn't very time efficient. Move Tables are simply an array where we save those calculations so they only need to be done once. Each Coordinate has a Move Table where for each possible Coordinate are 18 possible saved move calculations. 6 possible moves, done up to 3 times (4 is back to start). \
 Although there is a diffrence between raw-coordinates and sym-coordinates.
 
 ### raw-coordinate example:
@@ -494,23 +494,87 @@ Using the Corner orientation as Example:
 
     array[2186][18]
 
-    for i = 0 <= 2186:
+    for i = 0 <= 2186: // 0–2186 possible coordinates
         // create a cube with orientation i
         for 6 moves:
             for 3 variants:
                 // apply move to cube and save result inside array[i][]
 
-If this Table / result is saved outside runtime in a file or something, it can be loaded by the programme.
+If this Table / result is saved outside runtime in a file or something, it can be loaded by the programe.
 
 ### sym-coordinate:
-If we reduce a coordinate by symmetries, we only generate a move table for the representants of the equivalence classes. Let R(j) be a permutation belonging to the representant of the equivalence class with index j.
+For symmetry reduced coordinates, we only generate a move table for the representants of the equivalence classes. Let R(j) be a permutation belonging to the representant of the equivalence class with index j.
 
 When we apply a move M on this representant, the result will be in another equivalence class k, so that there is a symmetry S(i) with R(j)\*M = S(i)-1\*R(k)\*S(i). Then the resulting movetable entry is the corresponding sym-coordinate, that is MoveTable[ j,M ]:= 16\*k + i .
 
+    R(j) * M = S(i)^-1 * R(k) * S(i)
 
+    - apply move M to representant R(j)
+    -> get equivalent class k, with symmetry i
 
+    MoveTable[ j, M ] = 16 * k + i
+    MoveTable[ representant, move ] = 16 * destination equivalence class + symmetry index
 
+Why the S(i)? \
+R(j)M isn't *exactly* like R(k) necessarily, it might be oriented diffrently, so symmetrie S(i) clearly gets the result thats relative to R(j). Remember Symmetries move the whole cube around so that F might be right or L & R change places.
 
+ex: 
+
+    procedure CreateFlipUDSliceMoveTable;
+    var c: CubieCube; i,k,n: Integer; j: TurnAxis;
+    begin
+      SetLength(FlipSliceMove,64430,18); //18 different faceturns
+      c:= CubieCube.Create;
+      for i:=0 to 64430-1 do //iterate over all equivalence classes
+      begin
+        n:= FlipUDSliceToRawFlipUDSlice[i]; //get the raw-coordinate of the representant
+        c.InvUDSliceCoord(n div 2048); //and generate a permutation which has this FlipUDslice coordinate
+        c.InvEdgeOriCoord(n mod 2048);
+        for j:= U to B do
+        begin
+          for k:= 0 to 3 do
+          begin
+            c.Move(j); //apply all 18 faceturns
+            if k<>3 then FlipSliceMove[i,3*Ord(j)+k]:= c.FlipUDSliceCoord; //the sym-coordinate
+          end;
+        end;
+      end;
+    end;
+
+### From random Permutation to sym-coordinate
+This is only need this at the satrt when we have to calculate the coordinates of the cube we want to solve.
+
+For [0 <= i < 16] we apply[ S(i) * P * S(i)-1] and compute the raw-coordinate until we find the raw-coordinate in the ClassIndexToRepresentantArray at some position k. Let us denote this coordinate with R(k). \
+[S(i) * P * S(i)^-1 = R(k)] is equivalent to [S(i)^-1 * R(k) * S(i) = P], and this means P has the sym-coordinate 16*k + i.
+
+ex:
+
+    function CubieCube.FlipUDSliceCoord: Integer;
+    var k,n,coord: Integer; prod: EdgeCubie; c,d: CubieCube;
+    begin
+      c:= CubieCube.Create;
+      d:= CubieCube.Create;
+      c.InvUDSliceCoord(UDSliceCoord);
+      c.InvEdgeOriCoord(EdgeOriCoord);
+      Result:=-1;
+      for k:= 0 to 15 do
+      begin
+        EdgeMult(EdgeSym[k],c.PEdge^,prod);
+        EdgeMult(prod,EdgeSym[InvIdx[k]],d.PEdge^);
+        n:= 2048*d.UDSliceCoord + d.EdgeOriCoord;//raw coordinate
+        coord:= FlipUDSliceRawCoordClassIndex(n);
+        if coord<>-1 then
+        begin
+          Result:= coord shl 4 + k;
+          break;
+        end;
+      end;
+      assert(Result<>-1);
+      c.Free;
+      d.Free;
+    end;
+
+### applying a move to a sym-coord
 
 # Resources
 
