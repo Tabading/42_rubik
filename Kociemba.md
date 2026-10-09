@@ -18,14 +18,18 @@ Kociemba's two-phase algorithm quickly finds a reasonably short suboptimal solut
 - Phase 1: Orient all Edges and Corners correctly, so the cube can be solved using only 180° rotations of the sides (R2, L2, F2, B2) and U/D 
 - Phase 2: solve the cube
 
+In this README I will strife to try and go through Kociembas official explanation, which is rather complicated at first glance, and explain it in more detail. It's helpful to still have his documentation [https://kociemba.org/cube.htm] open at the side anyways, if you truly want to understand, since i refer to it while explaining. 
+
 # Phase 1
-Look for maneuvers which transform a scrambled cube to a G1 state. G1 Describes a subset of cube states that have Corners and Edges Oriented correctly. To do that efficently the cube state is described with 3 coordinates: (x, y, z). x is the Corner orientation Coordinate, y is the Edge orientation Coordinate, z is the UDSlice Coordinate. All G1 cube states have (0, 0, 0) as their coordinates.
+Here i'll explain the basics of Phase 1 and what kociemba uses here. \
+Phase 1 looks for maneuvers which transform a scrambled cube to a G1 state. G1 Describes a subset of cube states that have Corners and Edges Oriented correctly. To do that efficently the cube state is described with 3 coordinates: (x, y, z). x is the Corner orientation Coordinate, y is the Edge orientation Coordinate, z is the UDSlice Coordinate. All G1 cube states have (0, 0, 0) as their coordinates.
 
 ## (x, y, z) Coordinates Phase 1
-In Phase 1 x, y and z are as described below. All coordinates are needed information, but functionally Edge orientation and UDSlice coordinates are combined and reduced through symmetry reduction.
+In Phase 1 x, y and z are as described below. All coordinates are needed information, but functionally Edge orientation and UDSlice coordinates are combined and reduced through symmetry.
 
 ### x Corner Orientation Coordinate
-The orientation of the 8 corners are described by a number from 0 to 2186 (3^7 - 1). Going by Corner Order URF, UFL, ULB, UBR, DFR, DLF, DBL, (DRB), do the following:
+The orientation of all 8 corners are described by a number from 0 to 2186 (3^7 - 1). 3^7 because each Corner can be 0, 1 or 2 in Orientation, see [Corner Orientation](#corner-orientation). So 3 orientations for 7 Corners, since the 8th is determined by the others. -1 because arrays start at 0.\
+Going by Corner Order URF, UFL, ULB, UBR, DFR, DLF, DBL, (DRB), do the following:
 
     s = 0
     n = 6
@@ -39,7 +43,8 @@ The orientation of the 8 corners are described by a number from 0 to 2186 (3^7 -
     ! This ONLY works with the 'is replaced by' representation.
 
 ### y Edge Orientation Coordinate
-The orientation of the 12 edges is described by a number from 0 to 2047 (2^11 - 1). Going by Edge Order of UR, UF, UL, UB, DR, DF, DL, DB, FR, FL, BL, (BR), the orientation numbers of 0 and 1 make up a binary number, which turned into decimal is our coordinate. This can be easily done like this:
+The orientation of the 12 edges is described by a number from 0 to 2047 (2^11 - 1). Again 2 orientations for 11 Edges [EO Edge Orientation](#eo-edge-orientation). \
+Going by Edge Order of UR, UF, UL, UB, DR, DF, DL, DB, FR, FL, BL, (BR), the orientation numbers of 0 and 1 make up a binary number, which turned into decimal is our coordinate. This can be easily done like this:
 
     s = 0
     for edge:
@@ -48,7 +53,7 @@ The orientation of the 12 edges is described by a number from 0 to 2047 (2^11 - 
     BR is ignored.
 
 ### z UDSlice Coordinate
-The UDSlice coordinate is number from 0 to 494 (12*11*10*9/4! - 1) which is determined by the positions of the 4 UDSlice edges. The order of the 4 UDSlice edges within the positions is ignored.
+The UDSlice coordinate is number from 0 to 494 (12*11*10*9/4! - 1) which is determined by the positions of the 4 UDSlice edges. Those are simply FR, FL, BL, BR, since they don't contain any U or D facets/stickers. The order of the 4 UDSlice edges within the positions is ignored.
 
 Take all 12 Edges, number them from 0 - 11, and check where the 4 UD Edges are. \
 Imagine it like this with x being a UDSlice:
@@ -87,6 +92,16 @@ For Example:
     C(10, 2) = (10!) / ((2!) * (10 - 2)!) = 45
 
     z = 45 + 8 + 7 + 1 + 1 = 62
+
+
+### FlipUDSliceCoord
+Now this is used in the code, but barely explained in the documentation. It's a combination of the Edge Orientation and UDSlice Coordinate. It essentially saves both coords in a single integer. \
+The raw coordinate is created like this:
+
+    2048 * d.UDSliceCoord + d.EdgeOriCoord
+
+but this version is only an inbetween step, the actual saved coodinate is the symmetry reduced version.
+    
 
 
 
@@ -190,9 +205,7 @@ F =
 |---|---|---|---|---|---|---|---|---|
 | Replaced by | c:UFL; o:1 | c:DLF; o:2 | c:ULB; o:0 | c:UBR; o:0 | c:URF; o:2 | c:DFR; o:1 | c:DBL; o:0 | c:DRB; o:0 |
 
-
-In this case the corner URF is replaced by the corner currently at UFL adding +1 to its orientation, etc.
-
+In this case the corner URF is replaced by the corner currently at UFL adding +1 to its orientation, etc. \
 There's 2 ways of representing changes like this, "is replaced by" & "is carried to". Unless specified otherwise the algorithm uses the "is replaced by" representation.
 
 ## EO Edge Orientation 
@@ -505,7 +518,7 @@ If this Table / result is saved outside runtime in a file or something, it can b
 ### sym-coordinate:
 For symmetry reduced coordinates, we only generate a move table for the representants of the equivalence classes. Let R(j) be a permutation belonging to the representant of the equivalence class with index j.
 
-When we apply a move M on this representant, the result will be in another equivalence class k, so that there is a symmetry S(i) with R(j)\*M = S(i)-1\*R(k)\*S(i). Then the resulting movetable entry is the corresponding sym-coordinate, that is MoveTable[ j,M ]:= 16\*k + i .
+When we apply a move M on this representant, the result will be in another equivalence class k, so that there is a symmetry S(i) with [R(j) * M = S(i)-1 * R(k) * S(i)]. Then the resulting movetable entry is the corresponding sym-coordinate, that is MoveTable[ j, M ] = 16 * k + i .
 
     R(j) * M = S(i)^-1 * R(k) * S(i)
 
@@ -525,11 +538,11 @@ ex:
     begin
       SetLength(FlipSliceMove,64430,18); //18 different faceturns
       c:= CubieCube.Create;
-      for i:=0 to 64430-1 do //iterate over all equivalence classes
+      for i:=0 to 64430-1 do //iterate over all equivalence classes | i = equivalence class index
       begin
-        n:= FlipUDSliceToRawFlipUDSlice[i]; //get the raw-coordinate of the representant
+        n:= FlipUDSliceToRawFlipUDSlice[i]; //get the raw-coordinate of the representant i
         c.InvUDSliceCoord(n div 2048); //and generate a permutation which has this FlipUDslice coordinate
-        c.InvEdgeOriCoord(n mod 2048);
+        c.InvEdgeOriCoord(n mod 2048); 
         for j:= U to B do
         begin
           for k:= 0 to 3 do
@@ -541,10 +554,17 @@ ex:
       end;
     end;
 
-### From random Permutation to sym-coordinate
-This is only need this at the satrt when we have to calculate the coordinates of the cube we want to solve.
+This decodes the raw FlipUDSlice coordinate back into UDSliceCoord and EdgeOriCoord:
+- c.InvUDSliceCoord(n div 2048);
+- c.InvEdgeOriCoord(n mod 2048);
 
-For [0 <= i < 16] we apply[ S(i) * P * S(i)-1] and compute the raw-coordinate until we find the raw-coordinate in the ClassIndexToRepresentantArray at some position k. Let us denote this coordinate with R(k). \
+If you look back to the coords and symmetries chapter, 2048 is the amount of possible Edge orientation coords.
+    
+
+### From random Permutation to sym-coordinate
+This is only need this at the start when we have to calculate the coordinates of the cube we want to solve.
+
+For [0 <= i < 16] we apply [ S(i) * P * S(i)-1] and compute the raw-coordinate until we find the raw-coordinate in the ClassIndexToRepresentantArray at some position k. Let us denote this coordinate with R(k). \
 [S(i) * P * S(i)^-1 = R(k)] is equivalent to [S(i)^-1 * R(k) * S(i) = P], and this means P has the sym-coordinate 16*k + i.
 
 ex:
@@ -557,15 +577,15 @@ ex:
       c.InvUDSliceCoord(UDSliceCoord);
       c.InvEdgeOriCoord(EdgeOriCoord);
       Result:=-1;
-      for k:= 0 to 15 do
+      for k:= 0 to 15 do // 16 symmetries
       begin
         EdgeMult(EdgeSym[k],c.PEdge^,prod);
         EdgeMult(prod,EdgeSym[InvIdx[k]],d.PEdge^);
-        n:= 2048*d.UDSliceCoord + d.EdgeOriCoord;//raw coordinate
+        n:= 2048*d.UDSliceCoord + d.EdgeOriCoord; //raw coordinate
         coord:= FlipUDSliceRawCoordClassIndex(n);
-        if coord<>-1 then
+        if coord<>-1 then // != -1
         begin
-          Result:= coord shl 4 + k;
+          Result:= coord shl 4 + k; // coord << 4 + k
           break;
         end;
       end;
@@ -575,6 +595,54 @@ ex:
     end;
 
 ### applying a move to a sym-coord
+This is a little more complicated than for raw coords because we only have a move table for the representants, not every coordinate. We do this for space time efficiency, the extra time needed to compute the not saved coords is worth the saved space. This results in kociemba needing 3 Move tables to compute this: SymMove, MoveTable and SymMult.
+- SymMove[SymIdx,Move]: applying a symmetry to a Move permutation
+- MoveTable[j,M1]:      applying a move to a equivalence class 
+- SymMult[i1,i]:        combining 2 symmetries
+
+OK, this will be a long explanation, bear with me. \
+SO, we want to esentially apply a move M to a sym-coord x. Remember that x is the result of 16*k+i, so we can get k and i back from x by doing:
+- k = x / 16
+- i = x % 16
+
+Now looking at kociembas offical explanation he states, *"If we have the sym-coordinate x, we can extract from this coordinate the index j of the equivalence class and the index i of the symmetry."*. The j here can be confusing at first, so let's explain: \
+We know that MoveTable[j, M] = 16 * k+i, meaning that a Move M was applied and changed j to k essentially. That's not the case here at this step. Look at it like this, for "x = 16k * i" k is the equivalence class of x, So if a move M were now applied to that k it would be in place of j in the MoveTable[j, M]. 
+
+Now Kociemba makes a Formel out of [sym-coord*Move] "[S(i)^-1 * R(j) * S(i)] * M" and changes it around without changing what it results in. Like in basic math, changing things around to solve for x, like 2 = 1 + x -> x = 2 - 1, yk. For the sake of readability i'll ignore inbetween steps, so if you'd like to see how kociemba moves variables around in more detail, you can see it in his explanation. \
+We end up with the Formel:
+
+    [S(i)^-1 * R(j)] * [S(i) * M * S(i)^-1] * S(i)
+
+Now this: [S(i) * M * S(i)^-1] is something that kociemba has a movetable SymMove[SymIdx,Move] for. It's basically the result of applying a symmetry to a move. *"In symmetry.pas the array SymMove[SymIdx,Move] is initialized, so that SymMove[i,M] gives the desired result."*. In the Formel it's represented by M1. \
+Now the Formel changes to:
+
+    S(i)^-1 * [R(j)* M1] * S(i)
+
+Now this "[R(j) * M1]" is applying a move M to a representant j; The result of  MoveTable[j, M1] = new sym-coord y after move. from that new sym-coord y we again extract k and i; Here called j1 and i1. So this *"[R(j) * M1]"* can be written like *"S(i1)^-1 * R(j1) * S(i1)"*. \
+We now end up with the Formel:
+
+    [S(i) * S(i1)]^-1 * R(j1) * [S(i1) * S(i)]
+
+Notice that we have *"[S(i1) * S(i)]"* twice with one being the inverse. This is the product of 2 symmetries, for which kociemba again has a move table SymMult[SymIdx,SymIdx]. So SymMult[i1,i] = i2. \
+The Final Formel is now:
+
+    S(i2)^-1 * R(j1) * S(i2)
+
+with the corresponding sym-coordinate [16*j1+i2].
+
+As a simple flow chart it fould be like this:
+
+    x * M | sym-cord after a move
+    we need j1 and i2 for the Formel S(i2)^-1 * R(j1) * S(i2) :
+
+    x       -> j, i
+    M, i    -> M1
+    j, M1   -> y
+    y       -> [j1], i1
+    i, i1   -> [i2]
+
+
+
 
 # Resources
 
