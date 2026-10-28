@@ -642,11 +642,11 @@ As a simple flow chart it fould be like this:
 
 
 ## Pruning Tables
-Pruning Tables are a data structure that take out any data that can't lead to a valid solution. \
+Pruning Tables are a data structure that allow the algorythm to dicard paths that can't lead to a valid / optimal solution. \
 Kociemba uses them to give a *lowerbound for the necessary moves* to goal state, on which the speed of the algorythm depends.
 
 The table is once again based on coordinates. Remember, a coordinate represent a coset of a subgroup H. Those *coordinates are taken as the index* of the pruning table, in which the *number of moves back to subgroup H* are saved. Why subgroup H? The goal state is either identical to H (phase 1) or always included in H (phase 2), thus ensuring the estimate is always lowerbound.
-Specifically the pruning table index is computed from 1 sym-coordinate and 1 or 2 raw coordinates.
+The Specific coordinates the pruning table index is computed from are 1 sym-coordinate and 1 or 2 raw coordinates.
 
 Kociemba uses 3 Pruning Tables:
 - Phase 1
@@ -659,12 +659,10 @@ Kociemba uses 3 Pruning Tables:
     - sym-coordinate: UDSliceSorted (788 equivalence cases)
     - raw-coordinate: Corner orientation x1 (twist) (2187 cases) & Edge orientation x2 (flip) (2048 cases)
 
-### Example
-Let's go through the Phase 1 example kociemba gives. \
-We have the FlipUDSlice sym-coordinate 'A' and the Corner orientation 'x'. Remember that a symmetry coordinate is made up like this '16 * k + i', meaning we can get (y, i), the equivalence class index k (in this case y) and the symmetry index i from that coordinate. \
+Taking FlipUDSlice as an example, we have sym-coordinate 'A' and the raw Corner orientation 'x'. Remember that a symmetry coordinate is made up like this '16 * k + i', meaning we can get (y, i), the equivalence class index k (in this case y) and the symmetry index i from that coordinate. \
 Then we create a Permutation P corresponding to those indices. \
-By then doing S(i) * P * S(i)^-1, we get a permutation that's the same distance from the goal state with sym-coord (y, 0). \
-Turning x into x' is once again handled by Tables, in this case:
+By then doing S(i) * P * S(i)^-1, we get a permutation that's the same distance from the goal state with sym-coord (y, 0) and a new x'. \
+Since doing the full transormation of the Permutation every time for all x to x' is unnecessarily expensive, it's once again handled by Tables, in this case:
 - TwistConjugate: array[0..2187-1,0..15] of Word;
 - FlipConjugate: array of array of array {[0..2048-1,0..15,0..788-1]}of Word;
 - Edge8PosConjugate: array[0..40320-1,0..15] of Word;
@@ -674,8 +672,40 @@ From y and the new x' the pruning table indices are computed like this:
 - Phase 2: 2768 * x' + y
 - Huge Optimal Solver: (2048 * y + x1') * 2187 + x2'
 
-### what we actually save in the table
-To reduce memory size, we store the number of moves modulo 3
+### How to generate the Table
+The Table is generated in a breadth-first maner. Starting by storing depth 0 at the goal state, and then apply all 18 possible moves to that state. At those positions we store depth 1. Then for all those depth 1 positions we do the same, apply all 18 moves and, if the new possition is still empty, save d + 1 and so on. The actual saved number is explained in the next section. \
+Now since were using a combination of coordinates for indexing, it's not as simple as described above. 
+
+Some Permutations are already symmetric, meaning the same raw-coordinate (not the x, the raw that's turned into the sym) can be represented by multiple symmetry indices, with the equivalence class index being the same. So a Permutation A could be represented by either (y, i1) & (y, i2). Since we use the symmetry index i when transforming the Permutation with S(i) * A * S(i)^-1, we can end up with two diffrently transformed Permutations, resulting in different x' coordinates. \
+So we need to look for all symmetries to fill the relevant entries.
+
+Once theres not many empty entries left, we switch to "backward search", so we don't continusly go over alredy filled entries. It only changes which entries we iterate over.
+
+- Forward search:
+    - [known d] -> [try all 18 moves] -> [mostly filled?]
+- Backward search:
+    - [empty entry] -> [try all 18 moves] -> [find depth d]
+
+Remember we get the indices of the table with coordinates, meaning they correspond to some Permutation that we can apply moves to.
+
+
+### What we actually save in the Table
+To reduce memory size, we store the number of moves modulo 3 and then compress the table by combining 5 entries into 1 byte. 
+
+Let's first explain the moves modulo 3:
+
+|actual distance|saved distance|
+|---|---|
+|0|0|
+|1|1|
+|2|2|
+|3|0|
+|4|1|
+|5|2|
+|6|0|
+
+Our solver 
+
 
 # Resources
 
@@ -685,3 +715,4 @@ To reduce memory size, we store the number of moves modulo 3
 - https://kociemba.org/cube.htm
 - https://en.wikipedia.org/wiki/Iterative_deepening_A*
 - https://en.wikipedia.org/wiki/Coset
+
