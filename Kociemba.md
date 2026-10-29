@@ -6,15 +6,40 @@
         - [x Corner Orientation Coordinate](#x-corner-orientation-coordinate)
         - [y Edge Orientation Coordinate](#y-edge-orientation-coordinate)
         - [z UDSlice Coordinate](#z-udslice-coordinate)
+        - [FlipUDSliceCoord](#flipudslicecoord)
+    - [Precomputed Tables used here](#precomputed-tables-used-here)
+- [Phase 2](#phase-2)
+    - [(x, y, z) Coordinates Phase 2](#x-y-z-coordinates-phase-2)
+        - [Corner permutation Coordinate](#corner-permutation-coordinate)
+        - [Edge permutation Coordinate](#edge-permutation-coordinate)
+        - [Phase 2 UDSlice Coordinate](#phase-2-udslice-coordinate)
+    - [Precomputed Tables used here](#precomputed-tables-used-here)
 - [Notes](#notes)
+    - [Permutations](#permutations)
     - [EO Edge Orientation](#eo-edge-orientation)
         - [Natural / Unnatural Moves](#natural-/-unnatural-moves)
         - [Orbits](#orbits)
     - [Corner Orientation](#corner-orientation)
-    - [Resources](#resources)
+    - [Equivalent Cubes & Symetry](#equivalent-cubes--symetry)
+    - [A mathematical view of Coordinates: Cosets (Subgroups)](#a-mathematical-view-of-coordinates-cosets-subgroups)
+        - [Subgroup example](#subgroup-example)
+        - [Formal proof](#formal-proof)
+        - [Cosets (basics)](#cosets-basics)
+    - [Coordinates and Symmetry](#coordinates-and-symmetry)
+    - [Move Tables](#move-tables)
+        - [raw-coordinate example:](#raw-coordinate-example)
+        - [sym-coordinate:](#sym-coordinate)
+        - [From random Permutation to sym-coordinate](#from-random-permutation-to-sym-coordinate)
+        - [applying a move to a sym-coord](#applying-a-move-to-a-sym-coord)
+    - [Pruning Tables](#pruning-tables)
+        - [How to generate the Table](#how-to-generate-the-table)
+        - [What we actually save in the Table](#what-we-actually-save-in-the-table)
+        - [Compressing the table](#compressing-the-table)
+        - [Index to Entry](#index-to-entry)
+- [Resources](#resources)
 
 # Kociemba Two-Phase-Algorithm
-Kociemba's two-phase algorithm quickly finds a reasonably short suboptimal solution. A randomly scrambled cube would be typically solved in a ***fraction of a second in 20 moves or less***, but without any guarantee that the solution found is optimal. it is split in 2 Phases: 
+Kociemba's two-phase algorithm quickly finds a reasonably short suboptimal solution. A randomly scrambled cube would be typically solved in a ***fraction of a second in 20 moves or less***, but without any guarantee that the solution found is optimal. It is split in 2 Phases: 
 - Phase 1: Orient all Edges and Corners correctly, so the cube can be solved using only 180° rotations of the sides (R2, L2, F2, B2) and U/D 
 - Phase 2: solve the cube
 
@@ -102,8 +127,7 @@ The raw coordinate is created like this:
 
 but this version is only an inbetween step, the actual saved coodinate is the symmetry reduced version.
     
-
-
+## Precomputed Tables used here
 
 # Phase 2
 Transforms the cube from a G1 state into a solved one, using only moves of this subgroup, being G1 = <U,D,R2,L2,F2,B2>. Simmilar to phase 1, any cube can be described using 3 coordinates: The corner permutation coordinate (0..40319), the phase 2 edge permutation coordinate (0..40319), and the phase2 UDSlice coordinate (0..23). 
@@ -193,6 +217,8 @@ another example:
     (9 + 2) * 2 = 22
     (22 + 1) * 1 = 23
 
+
+## Precomputed Tables used here
 
 # Notes
 
@@ -660,9 +686,9 @@ Kociemba uses 3 Pruning Tables:
     - raw-coordinate: Corner orientation x1 (twist) (2187 cases) & Edge orientation x2 (flip) (2048 cases)
 
 Taking FlipUDSlice as an example, we have sym-coordinate 'A' and the raw Corner orientation 'x'. Remember that a symmetry coordinate is made up like this '16 * k + i', meaning we can get (y, i), the equivalence class index k (in this case y) and the symmetry index i from that coordinate. \
-Then we create a Permutation P corresponding to those indices. \
+Then we create a Permutation P corresponding to those indices and x. \
 By then doing S(i) * P * S(i)^-1, we get a permutation that's the same distance from the goal state with sym-coord (y, 0) and a new x'. \
-Since doing the full transormation of the Permutation every time for all x to x' is unnecessarily expensive, it's once again handled by Tables, in this case:
+Since doing the full transormation of the Permutation every time for all x' is unnecessarily expensive, it's once again handled by Tables, in this case:
 - TwistConjugate: array[0..2187-1,0..15] of Word;
 - FlipConjugate: array of array of array {[0..2048-1,0..15,0..788-1]}of Word;
 - Edge8PosConjugate: array[0..40320-1,0..15] of Word;
@@ -673,7 +699,7 @@ From y and the new x' the pruning table indices are computed like this:
 - Huge Optimal Solver: (2048 * y + x1') * 2187 + x2'
 
 ### How to generate the Table
-The Table is generated in a breadth-first maner. Starting by storing depth 0 at the goal state, and then apply all 18 possible moves to that state. At those positions we store depth 1. Then for all those depth 1 positions we do the same, apply all 18 moves and, if the new possition is still empty, save d + 1 and so on. The actual saved number is explained in the next section. \
+The Table is generated in a breadth-first maner. Start by storing depth 0 at the goal state, and then apply all 18 possible moves to that state. At those positions we store depth 1. Then for all those depth 1 positions we do the same, apply all 18 moves and, if the new possition is still empty, save d + 1 and so on. The actual saved number is explained in the next section. \
 Now since were using a combination of coordinates for indexing, it's not as simple as described above. 
 
 Some Permutations are already symmetric, meaning the same raw-coordinate (not the x, the raw that's turned into the sym) can be represented by multiple symmetry indices, with the equivalence class index being the same. So a Permutation A could be represented by either (y, i1) & (y, i2). Since we use the symmetry index i when transforming the Permutation with S(i) * A * S(i)^-1, we can end up with two diffrently transformed Permutations, resulting in different x' coordinates. \
@@ -688,24 +714,134 @@ Once theres not many empty entries left, we switch to "backward search", so we d
 
 Remember we get the indices of the table with coordinates, meaning they correspond to some Permutation that we can apply moves to.
 
-
 ### What we actually save in the Table
-To reduce memory size, we store the number of moves modulo 3 and then compress the table by combining 5 entries into 1 byte. 
+To reduce memory size, we store the number of moves to goal modulo 3 and then compress the table by combining 5 entries into 1 byte. Storing the moves modulo 3 means a move can only change the saved number by -1, 0, 1. That way we can go from the initial state, try all 18 possible moves and see which one decreases the saved number. If there is no move that decreases that number, we have reached the goal state. This is done with:
+- Function CoordCube.GetPrun()      (phase 1)
+- function GetPrunPhase2()          (phase 2)
+- function CoordCube.GetPrunBig()   (Huge optimal solver)
 
 Let's first explain the moves modulo 3:
 
-|actual distance|saved distance|
+| actual distance | saved distance |
 |---|---|
-|0|0|
-|1|1|
-|2|2|
-|3|0|
-|4|1|
-|5|2|
-|6|0|
+| 0 | 0 |
+| 1 | 1 |
+| 2 | 2 |
+| 3 | 0 |
+| 4 | 1 |
+| 5 | 2 |
+| 6 | 0 |
 
-Our solver 
+Our solver doesn't need the actual numbert of moves, it reconstructs that actual distance while following the sequence of moves that decrease the saved number.
 
+Now while generating the Table we use 2 bits per saved number which looks about like this:
+
+| number | bit representation |
+|---|---|
+| 0 | 00 |
+| 1 | 01 |
+| 2 | 10 |
+| 3* | 11 |
+
+\* 3 is for empty entries
+
+But since we don't need the 3 option after the table was fully generated we can compress the table, for better memory efficiency.
+
+### Compressing the table
+Now, Kociemba compresses 5 entries into 1 byte. The confusing part here is that even if we never use 11 each entry still needs 2 bits to display, so how do 10 bits fit into 1 byte(8 bits)? 
+
+It has to do with the amount of possible combinations we need to represent. 
+- 1 byte has 2^8                = 256 possible combinations
+- our 3 (0,1,2) ^5 (entrys) 3^5 = 243 possible combinations
+
+So the full possible combinations we need to represent can tecnically fit into 1 bite, the question now is how. \
+The answer is converting the binary of the 5 entrys into base 3.
+
+Firstly, let's explain how we split up our entrys, because it isn't linear. \
+It's like this:
+
+| main 4 | seperate 5th |
+|---|---|
+| 0, 1, 2, 3 | x |
+| 4, 5, 6, 7 | x + 1 |
+| 8, 9, 10, 11 | x + 2 |
+
+- the first 4 entrys (main group), of ALL groups of 5, are linear
+- the 5th entry always depends on how many numbers we have in total
+    -  generally: x = (Total Numbers) - (Total Numbers / 5)
+
+| Formel | Explanation |
+|---|---|
+| N           | Total amount of Numbers
+| q = N / 5   | full groups of 5 |
+| r = N % 5   | rest in main (unfinished group) |
+| M = 4q + r  | amount of nums in main |
+| x = N - q   | first 5th entry |
+
+Example for 27 Numbers:
+
+    N = 27
+    q = 27 / 5 = 5
+    r = 27 % 5 = 2
+    M = (4 * 5) + 2 = 22
+    x = 27 - 5 = 22
+
+    [ 0,  1,  2,  3, 22]
+    [ 4,  5,  6,  7, 23]
+    [ 8,  9, 10, 11, 24]
+    [12, 13, 14, 15, 25]
+    [16, 17, 18, 19, 26]
+    [20, 21,   ,   ,   ]
+
+Now that's only how our entrys are ordered, not the actual saved numbers, those would look more like this: [2, 0, 1, 2, 2], since we're only using 0, 1, 2. \
+In Binary that would be [10, 00, 01, 10, 10] or 1000011010, which is too big to fit into a byte, meaning we now have to convert it to base 3 like so:
+
+    [2, 0, 1, 2, 2]
+
+    [2] * 3^4 + [0] * 3^3 + [1] * 3^2 + [2] * 3^1 + [2] * 3^0
+    162       +  0        + 9         + 6         + 2
+    = 179
+
+Now if we instead convert this number to binary like this:
+
+    179             % 2   = 1 (bit position 0)
+    [179/2] = 89    % 2   = 1 (bit position 1)
+    [89/2]  = 44    % 2   = 0 (bit position 2)
+    [44/2]  = 22    % 2   = 0 (bit position 3)
+    [22/2]  = 11    % 2   = 1 (bit position 4)
+    [11/2]  = 5     % 2   = 1 (bit position 5)
+    [5/2]   = 2     % 2   = 0 (bit position 6)
+    [2/2]   = 1     % 2   = 1 (bit position 7)
+
+    => 10110011
+
+We get exactly 8 bits to fit into a Byte. \
+To get the original numbers back we simply do it in reverse:
+
+    [10110011]
+
+    [1] * 2^7 + [0] * 2^6 + [1] * 2^5 + [1] * 2^4 + [0] * 2^3 + [0] * 2^2 + [1] * 2^1 + [1] * 2^0
+    128       + 0         + 32        + 16        + 0         + 0         + 2         + 1
+    = 179
+
+    179             % 3   = 2 (entry position 4)
+    [179/3] = 59    % 3   = 2 (entry position 3)
+    [59/3]  = 19    % 3   = 1 (entry position 2)
+    [19/3]  = 6     % 3   = 0 (entry position 1)
+    [6/3]  = 2      % 3   = 2 (entry position 0)
+
+    => [2, 0, 1, 2, 2]
+
+### Index to Entry
+
+Tp find a certain entry with index i we can now do:
+- If i < x
+    - i >> 2 (bit operation for i / 4) to get the group of the index
+    - i & 3 (bit operation for i % 4) to get the position in group
+- If i >= x
+    - we only need to know the group since place is always 5
+    - i - x for group
+    
 
 # Resources
 
