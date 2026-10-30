@@ -845,6 +845,7 @@ Tp find a certain entry with index i we can now do:
 
 # Resources
 
+- https://github.com/hkociemba/RubiksCube-TwophaseSolver
 - https://www.youtube.com/watch?v=RPXcIUnKvQ8
 - https://www.zzmethod.com/tutorial/eo
 - https://kociemba.org/math/CubeDefs.htm#cornfaceturns
