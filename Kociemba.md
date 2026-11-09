@@ -80,6 +80,9 @@ Going by Edge Order of UR, UF, UL, UB, DR, DF, DL, DB, FR, FL, BL, (BR), the ori
 ### z UDSlice Coordinate
 The UDSlice coordinate is number from 0 to 494 (12*11*10*9/4! - 1) which is determined by the positions of the 4 UDSlice edges. Those are simply FR, FL, BL, BR, since they don't contain any U or D facets/stickers. The order of the 4 UDSlice edges within the positions is ignored.
 
+IMPORTANT to Note !! The Documentation descibes something VERY different from the actual code implementation. I will leave the explanation for the documentation in, but the Numbers of the 2 methods don't add up except for 0 and 494 so you can skip it.
+
+#### In Documentation
 Take all 12 Edges, number them from 0 - 11, and check where the 4 UD Edges are. \
 Imagine it like this with x being a UDSlice:
 
@@ -118,6 +121,45 @@ For Example:
 
     z = 45 + 8 + 7 + 1 + 1 = 62
 
+#### In Code 
+Take all 12 Edges, number them from 0 - 11, and check where the 4 UD Edges are. \
+Imagine it like this with x being a UDSlice:
+
+    Position i  |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 
+    Edge        | UR | UF | UL | UB | DR | DF | DL | DB | FR | FL | BL | BR | 
+    UDSlice     |    |    |    |    |    |    |    |    |  x |  x |  x |  x | 
+
+Now we go through all edges from 11 to 0 and every UD Edge thats encountered we calculate the binominal cooeficient like this: comb((11 - i), k + 1). k starts at 0 and every UD Edge increases by one. n and k follow "n >= k >= 0".
+
+For the above we would get the following numbers:
+
+    (11 - 11, 0 + 1) = (0, 1) = 0
+    (11 - 10, 1 + 1) = (1, 2) = 0
+    (11 - 9, 2 + 1) = (2, 3) = 0
+    (11 - 8, 3 + 1) = (3, 4) = 0
+    coordinate 0 
+
+Other examples:
+
+    Position i  |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 
+    Edge        | UR | UF | UL | UB | DR | DF | DL | DB | FR | FL | BL | BR | 
+    UDSlice     |  x |  x |  x |  x |    |    |    |    |    |    |    |    | 
+
+    (11 - 3, 0 + 1) = (8, 1) = 8!÷(1!×7!) = 8
+    (11 - 2, 1 + 1) = (9, 2) = 9!÷(2!×7!) = 36
+    (11 - 1, 2 + 1) = (10, 3) = 10!÷(3!×7!) = 120
+    (11 - 0, 3 + 1) = (11, 4) = 11!÷(4!×7!) = 330
+    = 494
+
+    Position i  |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 
+    Edge        | UR | UF | UL | UB | DR | DF | DL | DB | FR | FL | BL | BR | 
+    UDSlice     |  x |    |    |  x |    |  x |  x |    |    |    |    |    | 
+
+    (11 - 6, 0 + 1) = (5, 1) = 5!÷(1!×4!) = 5
+    (11 - 5, 1 + 1) = (6, 2) = 6!÷(2!×4!) = 15
+    (11 - 3, 2 + 1) = (8, 3) = 8!÷(3!×5!) = 56
+    (11 - 0, 3 + 1) = (11, 4) = 11!÷(4!×7!) = 330
+    = 406
 
 ### FlipUDSliceCoord
 Now this is used in the code, but barely explained in the documentation. It's a combination of the Edge Orientation and UDSlice Coordinate. It essentially saves both coords in a single integer. \
