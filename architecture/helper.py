@@ -1,18 +1,19 @@
 
 
-def rotate_right():
-    pass
+def rotate_right(arr, first, last):
+    ''' Rotate the array values 1 position to the right. '''
+    temp = arr[last]
+    for i in range(last, first, -1):
+        arr[i] = arr[i - 1]
+    arr[first] = temp
 
 
-def rotate_left():
-    pass
-
-
-# def binomial_coefficient(n, k):
-#     if n >= k >= 0:
-#         return (factorial(n)) // (factorial(k) * factorial(n - k))
-#     else:
-#         return 0
+def rotate_left(arr, first, last):
+    ''' Rotate the array values 1 position to the left. '''
+    temp = arr[first]
+    for i in range(first, last):
+        arr[i] = arr[i + 1]
+    arr[last] = temp
 
 
 def handle_ori_change(o_A, o_B):
@@ -47,4 +48,3 @@ def handle_ori_change(o_A, o_B):
         if ori < 0:
             ori += 3
     return ori
-

@@ -74,7 +74,7 @@ class Move(IntEnum):
 
 class BasicSymm(IntEnum):
     ''' 4 Basic Symmetries used to create the 48 Cube Symmetries. '''
-    
+
     S_URF3 = 0
     S_F2 = 1
     S_U4 = 2

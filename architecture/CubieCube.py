@@ -1,7 +1,7 @@
 
 # step 1 create CubieCube so i can start on the percompute of the tables
 from enums import Corner as Co, Edge as Ed
-from helper import handle_ori_change
+from helper import handle_ori_change, rotate_left, rotate_right
 from math import comb
 # NOTES
 # Co(i) returns an actual Corner enum member so we can later do
@@ -122,7 +122,7 @@ class CubieCube():
         for i in range(Co.DRB - 1, Co.URF - 1, -1):
             self.co[i] = twist % 3
             parity += self.co[i]
-            twist //= 3  # // floor division, returns int
+            twist //= 3
         self.co[Co.DRB] = ((3 - parity % 3) % 3)
 
     def get_flip(self):
@@ -138,7 +138,7 @@ class CubieCube():
     def set_flip(self, flip):
         ''' Apply a Edge orientation to class cube.
 
-            get the individual values by reversing how we cot the number
+            get the individual values by reversing how we got the number
             and calculate the only possible last value
         '''
         parity = 0
@@ -185,28 +185,167 @@ class CubieCube():
                 a -= comb(11 - i, k)
                 k -= 1
 
-        k = 0
+        j = 0
         # set other edges
         for i in Ed:
             if self.ec[i] == -1:
-                self.ec[i] == otherSlices[k]
-                k += 1
+                self.ec[i] == otherSlices[j]
+                j += 1
 
     def get_slice_sorted(self):
         '''slice_sorted = UDSlice orientation + order
         0 <= slice_sorted < 11880 in phase 1, 0 <= slice_sorted < 24
-        in phase 2, slice_sorted = 0 for solved cube.'''
-        pass
+        in phase 2, slice_sorted = 0 for solved cube.
 
-    def set_slice_sorted(self):
-        pass
+        Do the same as in in get_slice AND save which edge is encountered
+        in an array. This saves them backwards.
+        Go through that array backwards and see how often you need to rotate
+        the values for the correct numbers to be in the correct space.
+        '''
+
+        # get coordinate1, UDSlice orientation, order unimportant
+        coord1 = 0
+        k = 0
+        arr = [0] * 4
+        for i in range(Ed.BR, Ed.UR - 1, -1):
+            if Ed.FR <= self.ec[i] <= Ed.BR:  # if current edge is UDSlice
+                coord1 += comb((11 - i), k + 1)
+                arr[3 - k] = self.ec[i]  # save encountered edge
+                k += 1
+
+        # get coord2, the permutation/order of the edges
+        coord2 = 0
+        # ignore last edge, when 3 edges are in position, the
+        # last is automatically correct
+        for i in range(3, 0, -1):
+            k = 0
+            while arr[i] != i + 8:
+                # i goes down, correctly positiond nums stay in place
+                rotate_left(arr, 0, i)
+                k += 1  # counts rotations
+            coord2 = (i + 1) * coord2 + k
+        # decode coord1 with // 24, coord2 with % 24
+        return 24 * coord1 + coord2
+
+    def set_slice_sorted(self, coord):
+        ''' Set edges corresponding to coord. we get placement & order of
+        the UD edges from coord, all other edges are in numerical order.
+        '''
+
+        UDSlices = [Ed.FR, Ed.FL, Ed.BL, Ed.BR]
+        otherSlices = [Ed.UR, Ed.UF, Ed.UL, Ed.UB, Ed.DR, Ed.DF, Ed.DL, Ed.DB]
+        coord2 = coord % 24  # permutation / order
+        coord1 = coord // 24  # placement
+
+        # all edges invalid
+        for i in Ed:
+            self.ec[i] = -1
+
+        # change UDSlices array to be correct permutation/order
+        for i in range(1, 4):
+            k = coord2 % (i + 1)
+            coord2 //= (i + 1)
+            while k > 0:
+                rotate_right(UDSlices, 0, i)
+                k -= 1
+
+        k = 4
+        # set UD-Slice edges
+        for i in Ed:
+            if coord1 - comb(11 - i, k) >= 0:
+                self.ec[i] = UDSlices[4 - k]
+                coord1 -= comb(11 - i, k)
+                k -= 1
+
+        j = 0
+        # set other edges
+        for i in Ed:
+            if self.ec[i] == -1:
+                self.ec[i] == otherSlices[j]
+                j += 1
+
+# region: for u & d edges:
+# Almost the same as slice except for 1 thing:
+#   we rotate the array 4 to the right. so the solved location coordinate
+#   (not the order)
+#   for d it's 0 like slice, since it's essentially checking for the
+#   exact same locations:
+#
+#    | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | position
+#    | U | U | U | U | D | D | D | D | M | M | M  | M  | normal like for slice
+#    | M | M | M | M | U | U | U | U | D | D | D  | D  | rotated 4 to right
+#
+# So since the solved location for D, when rotated, is the same as Slice they
+# share the solved state number 0.
+# For U it's diffrent since its solved state after rotation is in the middle,
+# so it ends up as 69 for solved (1656 = 24*(69) + 0)
+# endregion
 
     def get_u_edges(self):
-        ''''''
-        pass
+        ''' Get the permutation and location of edges UR, UF, UL and UB.
+        0 <= u_edges < 11880 in phase 1, 0 <= u_edges < 1680 in phase 2,
+        u_edges = 1656 for solved cube. '''
 
-    def set_u_edges(self):
-        pass
+        coord1 = 0
+        k = 0
+        arr = [0] * 4
+        # modify permutation : explanation in comment "for u & d edges"
+        ec_modified = self.ec[:]
+        for i in range(4):
+            rotate_right(ec_modified, 0, 11)
+
+        for i in range(Ed.BR, Ed.UR - 1, -1):
+            if Ed.UR <= ec_modified[i] <= Ed.UB:  # if current edge is U edge
+                coord1 += comb((11 - i), k + 1)
+                arr[3 - k] = ec_modified[i]  # save encountered edge
+                k += 1
+
+        coord2 = 0
+        for i in range(3, 0, -1):
+            k = 0
+            while arr[i] != i:
+                # i goes down, correctly positiond nums stay in place
+                rotate_left(arr, 0, i)
+                k += 1  # counts rotations
+            coord2 = (i + 1) * coord2 + k
+
+        return 24 * coord1 + coord2
+
+    def set_u_edges(self, coord):
+        UDSlices = [Ed.UR, Ed.UL, Ed.UL, Ed.UR]
+        otherSlices = [Ed.DR, Ed.DF, Ed.DL, Ed.DB, Ed.FR, Ed.FL, Ed.BL, Ed.BR]
+        coord2 = coord % 24  # permutation / order
+        coord1 = coord // 24  # placement
+
+        # all edges invalid
+        for i in Ed:
+            self.ec[i] = -1
+
+        # change UDSlices array to be correct permutation/order
+        for i in range(1, 4):
+            k = coord2 % (i + 1)
+            coord2 //= (i + 1)
+            while k > 0:
+                rotate_right(UDSlices, 0, i)
+                k -= 1
+
+        k = 4
+        # set UD-Slice edges
+        for i in Ed:
+            if coord1 - comb(11 - i, k) >= 0:
+                self.ec[i] = UDSlices[4 - k]
+                coord1 -= comb(11 - i, k)
+                k -= 1
+
+        j = 0
+        # set other edges
+        for i in Ed:
+            if self.ec[i] == -1:
+                self.ec[i] == otherSlices[j]
+                j += 1
+
+        for j in range(4):
+            rotate_left(self.ec, 0, 11)
 
     def get_d_edges(self):
         ''''''
