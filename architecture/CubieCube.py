@@ -1,6 +1,7 @@
 
 # step 1 create CubieCube so i can start on the percompute of the tables
-from enums import Corner as Co, Edge as Ed
+from enums import Color, Corner as Co, Edge as Ed
+import defs 
 from helper import handle_ori_change, rotate_left, rotate_right
 from math import comb
 # NOTES
@@ -27,6 +28,7 @@ class CubieCube():
         eo = edge orientation
         '''
 
+        # corner
         if co_per is None:
             self.cc = [Co(i) for i in range(8)]
         else:
@@ -36,6 +38,7 @@ class CubieCube():
         else:
             self.co = co_ori[:]
 
+        # edge
         if ed_per is None:
             self.ec = [Ed(i) for i in range(12)]
         else:
@@ -54,6 +57,7 @@ class CubieCube():
             Applies the permutation of a cube b to the Corners of the
             class cube. Changes permutation .cc and orientation .co
         '''
+
         cc = [0] * 8
         co = [0] * 8
         # fill new arrays with updated values
@@ -82,6 +86,7 @@ class CubieCube():
             ec[i] = self.ec[b.ec[i]]
             # % 2 so the result is always 0 or 1
             eo[i] = (b.eo[i] + self.eo[b.ec[i]]) % 2
+
         # update the values
         for i in Ed:
             self.ec = ec[i]
@@ -98,7 +103,9 @@ class CubieCube():
 #  getter setter
 
     def corner_parity(self):
-        ''' Go backwards through self.cc | corner permutation,
+        ''' Return corner parity.
+
+        Go backwards through self.cc | corner permutation,
         if a number to the left is bigger than the current number
         parity, +1
 
@@ -131,6 +138,8 @@ class CubieCube():
         return par
 
     def edge_parity(self):
+        ''' Return edge parity. '''
+
         par = 0
         for i in range(Ed.BR, Ed.UR, -1):  # 11 - 1
             for j in range(i - 1, Ed.UR - 1, -1):  # i - 0
@@ -163,7 +172,6 @@ class CubieCube():
         '''
 
         parity = 0
-        # go form 6 to 0 | 7 corners
         for i in range(Co.DRB - 1, Co.URF - 1, -1):
             self.co[i] = twist % 3
             parity += self.co[i]
@@ -207,7 +215,7 @@ class CubieCube():
         coord = 0
         k = 0
         for i in range(Ed.BR, Ed.UR - 1, -1):
-            if Ed.FR <= self.ec[i] <= Ed.BR:  # if current edge is UDSlice
+            if Ed.FR <= self.ec[i] <= Ed.BR:
                 coord += comb((11 - i), k + 1)
                 k += 1
         return coord
@@ -262,7 +270,7 @@ class CubieCube():
         # get coord1
         k = 0
         for i in range(Ed.BR, Ed.UR - 1, -1):
-            if Ed.FR <= self.ec[i] <= Ed.BR:  # if current edge is UDSlice
+            if Ed.FR <= self.ec[i] <= Ed.BR:
                 coord1 += comb((11 - i), k + 1)
                 arr[3 - k] = self.ec[i]  # save encountered edge
                 k += 1
@@ -295,8 +303,8 @@ class CubieCube():
 
         UDSlices = [Ed.FR, Ed.FL, Ed.BL, Ed.BR]
         otherSlices = [Ed.UR, Ed.UF, Ed.UL, Ed.UB, Ed.DR, Ed.DF, Ed.DL, Ed.DB]
+        coord1 = coord // 24  # orientation | location
         coord2 = coord % 24  # permutation / order
-        coord1 = coord // 24  # placement
 
         # all edges invalid
         for i in Ed:
@@ -367,7 +375,7 @@ class CubieCube():
         # get coord1
         k = 0
         for i in range(Ed.BR, Ed.UR - 1, -1):
-            if Ed.UR <= ec_modified[i] <= Ed.UB:  # if current edge is U edge
+            if Ed.UR <= ec_modified[i] <= Ed.UB:
                 coord1 += comb((11 - i), k + 1)
                 arr[3 - k] = ec_modified[i]  # save encountered edge
                 k += 1
@@ -457,7 +465,7 @@ class CubieCube():
         # get coord1
         k = 0
         for i in range(Ed.BR, Ed.UR - 1, -1):
-            if Ed.DR <= ec_modified[i] <= Ed.DB:  # if current edge is D edge
+            if Ed.DR <= ec_modified[i] <= Ed.DB:
                 coord1 += comb((11 - i), k + 1)
                 arr[3 - k] = ec_modified[i]  # save encountered edge
                 k += 1
@@ -577,8 +585,15 @@ class CubieCube():
         return coord
 
     def set_ud_edges(self, coord):
+        ''' Set U & D edges acording to coord
+
+        first fill positions in numerical order
+        then apply rotations we get from coord
+        '''
+
         for i in range(Ed.UR, Ed.DB + 1):
             self.ec[i] = i
+
         for i in range(Ed.UR, Ed.DB + 1):
             k = coord % (i + 1)
             coord //= i + 1
@@ -629,3 +644,22 @@ class CubieCube():
             return 'Error: Edge and Corner Parities not equal.'
 
         return True
+
+
+
+basic_move_cubies = [CubieCube()] * 6
+basic_move_cubies[Color.U] = CubieCube(defs.U_cc, defs.U_co, defs.U_ec, defs.U_eo)
+basic_move_cubies[Color.R] = CubieCube(defs.R_cc, defs.R_co, defs.R_ec, defs.R_eo)
+basic_move_cubies[Color.F] = CubieCube(defs.F_cc, defs.F_co, defs.F_ec, defs.F_eo)
+basic_move_cubies[Color.D] = CubieCube(defs.D_cc, defs.D_co, defs.D_ec, defs.D_eo)
+basic_move_cubies[Color.L] = CubieCube(defs.L_cc, defs.L_co, defs.L_ec, defs.L_eo)
+basic_move_cubies[Color.B] = CubieCube(defs.B_cc, defs.B_co, defs.B_ec, defs.B_eo)
+
+
+# 3 * 6 = 18 every basic move can be done 3 times
+all_move_cube = [CubieCube()] * 18
+for i in Color:
+    cubi = CubieCube()
+    for j in range(3):
+        cubi.multiply(basic_move_cubies[i])
+        all_move_cube[3 * i + j] = CubieCube(cubi.cc, cubi.co, cubi.ec, cubi.eo)
