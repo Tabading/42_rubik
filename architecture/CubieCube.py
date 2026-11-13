@@ -1,7 +1,7 @@
 
 # step 1 create CubieCube so i can start on the percompute of the tables
-from enums import Color, Corner as Co, Edge as Ed
-import defs 
+from enums import Corner as Co, Edge as Ed
+
 from helper import handle_ori_change, rotate_left, rotate_right
 from math import comb
 # NOTES
@@ -644,22 +644,3 @@ class CubieCube():
             return 'Error: Edge and Corner Parities not equal.'
 
         return True
-
-
-
-basic_move_cubies = [CubieCube()] * 6
-basic_move_cubies[Color.U] = CubieCube(defs.U_cc, defs.U_co, defs.U_ec, defs.U_eo)
-basic_move_cubies[Color.R] = CubieCube(defs.R_cc, defs.R_co, defs.R_ec, defs.R_eo)
-basic_move_cubies[Color.F] = CubieCube(defs.F_cc, defs.F_co, defs.F_ec, defs.F_eo)
-basic_move_cubies[Color.D] = CubieCube(defs.D_cc, defs.D_co, defs.D_ec, defs.D_eo)
-basic_move_cubies[Color.L] = CubieCube(defs.L_cc, defs.L_co, defs.L_ec, defs.L_eo)
-basic_move_cubies[Color.B] = CubieCube(defs.B_cc, defs.B_co, defs.B_ec, defs.B_eo)
-
-
-# 3 * 6 = 18 every basic move can be done 3 times
-all_move_cube = [CubieCube()] * 18
-for i in Color:
-    cubi = CubieCube()
-    for j in range(3):
-        cubi.multiply(basic_move_cubies[i])
-        all_move_cube[3 * i + j] = CubieCube(cubi.cc, cubi.co, cubi.ec, cubi.eo)

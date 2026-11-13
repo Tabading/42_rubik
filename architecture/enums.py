@@ -5,6 +5,23 @@
 
 from enum import IntEnum
 
+
+class Constants(IntEnum):
+    FOLDER = "move_tables"
+    MAX_MOVE = 18
+    MAX_SYM = 48
+    MAX_UDSLICE_PERM = 24  # 24 possible permutations for UDSlice edges
+
+    MAX_TWIST_PHASE1 = 2187  # 3^7 possible corner orientations in phase 1
+    MAX_FLIP_PHASE1 = 2048  # 2^11 possible edge orientations in phase 1
+    MAX_SLICE_SORTED_PHASE1 = 11880  # 12*11*10*9 possible positions  in phase1
+    MAX_SLICE_PHASE1 = 495  # also MAX_SLICE_SORTED // MAX_UDSLICE_PERM
+
+    MAX_U_EDGES_PHASE2 = 1680  # 1680 for solved
+    MAX_CORNERS_PHASE2 = 40320  # 8! corner permutations in phase 2
+    MAX_UD_EDGES_PHASE2 = 40320  # 8! edge permutations in the U & D in phase 2
+
+
 class Color(IntEnum):
     U = 0
     R = 1
