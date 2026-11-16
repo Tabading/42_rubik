@@ -1,0 +1,14 @@
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pre_compute"
+version = "0.0.1"
+description = "creation of pre-computed tables"
+authors = [
+    {name = "tabading", email = "tabading@student.42wolfsburg.de"}
+]
+license = {text = "MIT"}
+requires-python = ">=3.7"
