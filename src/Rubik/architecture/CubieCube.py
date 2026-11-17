@@ -1,8 +1,8 @@
 
 # step 1 create CubieCube so i can start on the percompute of the tables
-from enums import Corner as Co, Edge as Ed
-
-from helper import handle_ori_change, rotate_left, rotate_right
+from architecture.enums import Corner as Co, Edge as Ed
+import traceback
+from architecture.helper import handle_ori_change, rotate_left, rotate_right
 from math import comb
 # NOTES
 # Co(i) returns an actual Corner enum member so we can later do
@@ -89,8 +89,8 @@ class CubieCube():
 
         # update the values
         for i in Ed:
-            self.ec = ec[i]
-            self.eo = eo[i]
+            self.ec[i] = ec[i]
+            self.eo[i] = eo[i]
 
     def multiply(self, b):
         ''' Apply the permutations of b to class cube for

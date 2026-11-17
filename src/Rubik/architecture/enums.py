@@ -5,9 +5,10 @@
 
 from enum import IntEnum
 
+FOLDER = "move_tables"
+
 
 class Constants(IntEnum):
-    FOLDER = "move_tables"
     MAX_MOVE = 18
     MAX_SYM = 48
     MAX_UDSLICE_PERM = 24  # 24 possible permutations for UDSlice edges

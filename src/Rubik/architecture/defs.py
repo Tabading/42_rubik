@@ -1,6 +1,6 @@
 
-from enums import Color, Corner as Co, Edge as Ed
-from CubieCube import CubieCube
+from architecture.enums import Color, Corner as Co, Edge as Ed
+from architecture.CubieCube import CubieCube
 
 # Permutation & orientation changes after Move
 
@@ -76,4 +76,5 @@ for i in Color:
     cubi = CubieCube()
     for j in range(3):
         cubi.multiply(basic_move_cubies[i])
-        all_move_cube[3 * i + j] = CubieCube(cubi.cc, cubi.co, cubi.ec, cubi.eo)
+        all_move_cube[3 * i + j] = CubieCube(
+            cubi.cc, cubi.co, cubi.ec, cubi.eo)
