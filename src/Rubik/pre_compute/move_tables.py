@@ -4,169 +4,125 @@ import array as ar
 import architecture.CubieCube as cc
 from architecture.enums import Constants as Const, Color, FOLDER
 import architecture.defs as defs
-cubi = cc.CubieCube()
 
 if not path.exists(FOLDER):
     mkdir(FOLDER)
 
+cubi = cc.CubieCube()
+
+
+# maybe add progess
+def create_table(fname, size, coord_amt, set_func, get_func, mult_func, phase2=False):
+    if not path.isfile(path.join(FOLDER, fname)):
+        print("create " + fname + " ...")
+        table = ar.array('H', [0] * size)
+        for i in range(coord_amt):
+            if (i + 1) % 200 == 0:
+                print('.', end='', flush=True)
+            if (i + 1) % 16000 == 0:
+                print('')
+            set_func(i)  # sets cube state for all possibilities
+            for j in Color:  # 6 possible moves URFLDB
+                for k in range(3):  # 3 times per move
+                    mult_func(defs.basic_move_cubies[j])
+                    # only R2, F2, L2 and B2 in phase 2
+                    if phase2 and j in [Color.R, Color.F, Color.L, Color.B] and k != 1:
+                        continue
+                    table[Const.MAX_MOVE * i + 3 * j + k] = get_func()
+                mult_func(defs.basic_move_cubies[j])
+        file = open(path.join(FOLDER, fname), 'wb')
+        table.tofile(file)
+        print()
+    else:
+        print("load " + fname + " ...")
+        file = open(path.join(FOLDER, fname), 'rb')
+        table = ar.array('H')
+        table.fromfile(file, size)
+    file.close()
+    return table
+
+
 # Move_Twist
-fname = "corner_twist_table"
-size = Const.MAX_TWIST_PHASE1 * Const.MAX_MOVE
-if not path.isfile(path.join(FOLDER, fname)):
-    print("create " + fname + " ...")
-    twist = ar.array('H', [0] * size)
-    for i in range(Const.MAX_TWIST_PHASE1):
-        cubi.set_twist(i)  # sets cube state for all 2187 possibilities
-        for j in Color:  # 6 possible moves URFLDB
-            for k in range(3):  # 3 times per move
-                cubi.corner_multiply(defs.basic_move_cubies[j])
-                twist[Const.MAX_MOVE * i + 3 * j + k] = cubi.get_twist()
-            cubi.corner_multiply(defs.basic_move_cubies[j])
-    file = open(path.join(FOLDER, fname), 'wb')
-    twist.tofile(file)
-else:
-    print("load " + fname + " ...")
-    file = open(path.join(FOLDER, fname), 'rb')
-    twist = ar.array('H')
-    twist.fromfile(file, size)
-file.close()
+corner_twist = create_table(
+    "corner_twist_table",
+    Const.MAX_TWIST_PHASE1 * Const.MAX_MOVE,
+    Const.MAX_TWIST_PHASE1,
+    cubi.set_twist,
+    cubi.get_twist,
+    cubi.corner_multiply
+)
 
 
 # Move_Flip
-fname = "edge_flip_table"
-size = Const.MAX_FLIP_PHASE1 * Const.MAX_MOVE
-if not path.isfile(path.join(FOLDER, fname)):
-    print("create " + fname + " ...")
-    flip = ar.array('H', [0] * size)
-    for i in range(Const.MAX_FLIP_PHASE1):
-        cubi.set_flip(i)  # sets cube state for all 2048 possibilities
-        for j in Color:  # 6 possible moves URFLDB
-            for k in range(3):  # 3 times per move
-                cubi.edge_multiply(defs.basic_move_cubies[j])
-                flip[Const.MAX_MOVE * i + 3 * j + k] = cubi.get_flip()
-            cubi.edge_multiply(defs.basic_move_cubies[j])
-    file = open(path.join(FOLDER, fname), 'wb')
-    flip.tofile(file)
-else:
-    print("load " + fname + " ...")
-    file = open(path.join(FOLDER, fname), 'rb')
-    flip = ar.array('H')
-    flip.fromfile(file, size)
-file.close()
+edge_flip = create_table(
+    "edge_flip_table",
+    Const.MAX_FLIP_PHASE1 * Const.MAX_MOVE,
+    Const.MAX_FLIP_PHASE1,
+    cubi.set_flip,
+    cubi.get_flip,
+    cubi.edge_multiply
+)
+
 
 # Move_Slice_Sorted
-fname = "slice_sorted_table"
-size = Const.MAX_SLICE_SORTED_PHASE1 * Const.MAX_MOVE
-if not path.isfile(path.join(FOLDER, fname)):
-    print("create " + fname + " ...")
-    ss = ar.array('H', [0] * size)
-    for i in range(Const.MAX_SLICE_SORTED_PHASE1):
-        cubi.set_slice_sorted(i)  # sets cube state for all 11880 possibilities
-        for j in Color:  # 6 possible moves URFLDB
-            for k in range(3):  # 3 times per move
-                cubi.edge_multiply(defs.basic_move_cubies[j])
-                ss[Const.MAX_MOVE * i + 3 * j + k] = cubi.get_slice_sorted()
-            cubi.edge_multiply(defs.basic_move_cubies[j])
-    file = open(path.join(FOLDER, fname), 'wb')
-    ss.tofile(file)
-else:
-    print("load " + fname + " ...")
-    file = open(path.join(FOLDER, fname), 'rb')
-    ss = ar.array('H')
-    ss.fromfile(file, size)
-file.close()
+slice_sorted = create_table(
+    "slice_sorted_table",
+    Const.MAX_SLICE_SORTED_PHASE1 * Const.MAX_MOVE,
+    Const.MAX_SLICE_SORTED_PHASE1,
+    cubi.set_slice_sorted,
+    cubi.get_slice_sorted,
+    cubi.edge_multiply
+)
+
 
 # Move_U_Edges
-fname = "u_edge_table"
-size = Const.MAX_SLICE_SORTED_PHASE1 * Const.MAX_MOVE
-if not path.isfile(path.join(FOLDER, fname)):
-    print("create " + fname + " ...")
-    ss = ar.array('H', [0] * size)
-    for i in range(Const.MAX_SLICE_SORTED_PHASE1):
-        cubi.set_u_edges(i)  # sets cube state for all 11880 possibilities
-        for j in Color:  # 6 possible moves URFLDB
-            for k in range(3):  # 3 times per move
-                cubi.edge_multiply(defs.basic_move_cubies[j])
-                ss[Const.MAX_MOVE * i + 3 * j + k] = cubi.get_u_edges()
-            cubi.edge_multiply(defs.basic_move_cubies[j])
-    file = open(path.join(FOLDER, fname), 'wb')
-    ss.tofile(file)
-else:
-    print("load " + fname + " ...")
-    file = open(path.join(FOLDER, fname), 'rb')
-    ss = ar.array('H')
-    ss.fromfile(file, size)
-file.close()
+u_edge = create_table(
+    "u_edge_table",
+    Const.MAX_SLICE_SORTED_PHASE1 * Const.MAX_MOVE,
+    Const.MAX_SLICE_SORTED_PHASE1,
+    cubi.set_u_edges,
+    cubi.get_u_edges,
+    cubi.edge_multiply
+)
+
 
 # Move_D_Edges
-fname = "d_edge_table"
-size = Const.MAX_SLICE_SORTED_PHASE1 * Const.MAX_MOVE
-if not path.isfile(path.join(FOLDER, fname)):
-    print("create " + fname + " ...")
-    ss = ar.array('H', [0] * size)
-    for i in range(Const.MAX_SLICE_SORTED_PHASE1):
-        cubi.set_d_edges(i)  # sets cube state for all 11880 possibilities
-        for j in Color:  # 6 possible moves URFLDB
-            for k in range(3):  # 3 times per move
-                cubi.edge_multiply(defs.basic_move_cubies[j])
-                ss[Const.MAX_MOVE * i + 3 * j + k] = cubi.get_d_edges()
-            cubi.edge_multiply(defs.basic_move_cubies[j])
-    file = open(path.join(FOLDER, fname), 'wb')
-    ss.tofile(file)
-else:
-    print("load " + fname + " ...")
-    file = open(path.join(FOLDER, fname), 'rb')
-    ss = ar.array('H')
-    ss.fromfile(file, size)
-file.close()
+d_edge = create_table(
+    "d_edge_table",
+    Const.MAX_SLICE_SORTED_PHASE1 * Const.MAX_MOVE,
+    Const.MAX_SLICE_SORTED_PHASE1,
+    cubi.set_d_edges,
+    cubi.get_d_edges,
+    cubi.edge_multiply
+)
+
 
 # Move_UD_Edges
-fname = "phase2_ud_edge_table"
-size = Const.MAX_UD_EDGES_PHASE2 * Const.MAX_MOVE
-if not path.isfile(path.join(FOLDER, fname)):
-    print("create " + fname + " ...")
-    ss = ar.array('H', [0] * size)
-    for i in range(Const.MAX_UD_EDGES_PHASE2):
-        cubi.set_ud_edges(i)  # sets cube state for all 40320 possibilities
-        for j in Color:  # 6 possible moves URFLDB
-            for k in range(3):  # 3 times per move
-                cubi.edge_multiply(defs.basic_move_cubies[j])
-                ss[Const.MAX_MOVE * i + 3 * j + k] = cubi.get_ud_edges()
-            cubi.edge_multiply(defs.basic_move_cubies[j])
-    file = open(path.join(FOLDER, fname), 'wb')
-    ss.tofile(file)
-else:
-    print("load " + fname + " ...")
-    file = open(path.join(FOLDER, fname), 'rb')
-    ss = ar.array('H')
-    ss.fromfile(file, size)
-file.close()
+ud_edge = create_table(
+    "phase2_ud_edge_table",
+    Const.MAX_UD_EDGES_PHASE2 * Const.MAX_MOVE,
+    Const.MAX_UD_EDGES_PHASE2,
+    cubi.set_ud_edges,
+    cubi.get_ud_edges,
+    cubi.edge_multiply,
+    True
+)
+
 
 # Phase2_Edgemerge from coord.py
 
 
 
 # Move_Corners
-fname = "phase2_corner_perm_table"
-size = Const.MAX_CORNERS_PHASE2 * Const.MAX_MOVE
-if not path.isfile(path.join(FOLDER, fname)):
-    print("create " + fname + " ...")
-    ss = ar.array('H', [0] * size)
-    for i in range(Const.MAX_CORNERS_PHASE2):
-        cubi.set_corners(i)  # sets cube state for all 40320 possibilities
-        for j in Color:  # 6 possible moves URFLDB
-            for k in range(3):  # 3 times per move
-                cubi.corner_multiply(defs.basic_move_cubies[j])
-                ss[Const.MAX_MOVE * i + 3 * j + k] = cubi.get_corners()
-            cubi.corner_multiply(defs.basic_move_cubies[j])
-    file = open(path.join(FOLDER, fname), 'wb')
-    ss.tofile(file)
-else:
-    print("load " + fname + " ...")
-    file = open(path.join(FOLDER, fname), 'rb')
-    ss = ar.array('H')
-    ss.fromfile(file, size)
-file.close()
+corner_perm = create_table(
+    "phase2_corner_perm_table",
+    Const.MAX_CORNERS_PHASE2 * Const.MAX_MOVE,
+    Const.MAX_CORNERS_PHASE2,
+    cubi.set_corners,
+    cubi.get_corners,
+    cubi.corner_multiply
+)
+
 
 # -------------------------------------------------------
 
@@ -195,3 +151,12 @@ if __name__ == "__main__":
                       "move_tables/edge_flip_table"))
     print(files_equal("../../twophase/move_slice_sorted",
                       "move_tables/slice_sorted_table"))
+    
+    print(files_equal("../../twophase/move_u_edges",
+                      "move_tables/u_edge_table"))
+    print(files_equal("../../twophase/move_d_edges",
+                      "move_tables/d_edge_table"))
+    print(files_equal("../../twophase/move_ud_edges",
+                      "move_tables/phase2_ud_edge_table"))
+    print(files_equal("../../twophase/move_corners",
+                      "move_tables/phase2_corner_perm_table"))

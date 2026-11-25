@@ -405,7 +405,7 @@ class CubieCube():
         - rotate 4 left to reverse rotation when getting coordinate
         '''
 
-        USlices = [Ed.UR, Ed.UL, Ed.UL, Ed.UR]
+        USlices = [Ed.UR, Ed.UF, Ed.UL, Ed.UB]
         otherSlices = [Ed.DR, Ed.DF, Ed.DL, Ed.DB, Ed.FR, Ed.FL, Ed.BL, Ed.BR]
         coord2 = coord % 24  # permutation / order
         coord1 = coord // 24  # placement
@@ -434,7 +434,7 @@ class CubieCube():
         j = 0
         for i in Ed:
             if self.ec[i] == -1:
-                self.ec[i] == otherSlices[j]
+                self.ec[i] = otherSlices[j]
                 j += 1
 
         # rotate 4 left
@@ -495,7 +495,7 @@ class CubieCube():
         - rotate 4 left to reverse rotation when getting coordinate
         '''
 
-        DSlices = [Ed.DR, Ed.DL, Ed.DL, Ed.DR]
+        DSlices = [Ed.DR, Ed.DF, Ed.DL, Ed.DB]
         otherSlices = [Ed.FR, Ed.FL, Ed.BL, Ed.BR, Ed.UR, Ed.UF, Ed.UL, Ed.UB]
         coord2 = coord % 24  # permutation / order
         coord1 = coord // 24  # placement
@@ -524,7 +524,7 @@ class CubieCube():
         j = 0
         for i in Ed:
             if self.ec[i] == -1:
-                self.ec[i] == otherSlices[j]
+                self.ec[i] = otherSlices[j]
                 j += 1
 
         # reverse rotation
@@ -555,7 +555,7 @@ class CubieCube():
         class cube
         '''
 
-        self.cp = list(range(Co.URF, Co.DRB + 1))
+        self.cp = [i for i in Co]
         for i in Co:
             k = coord % (i + 1)
             coord //= i + 1
